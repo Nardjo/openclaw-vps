@@ -1,0 +1,12 @@
+services:
+  openclaw:
+    build: .
+    container_name: openclaw-vps
+    restart: unless-stopped
+    volumes:
+      - nodeuser-data:/home/nodeuser
+    ports:
+      - "3000:3000"
+
+volumes:
+  nodeuser-data:
