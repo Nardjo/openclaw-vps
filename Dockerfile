@@ -14,6 +14,9 @@ RUN apt-get update && apt-get install -y \
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     apt-get install -y nodejs
 
+# Install openclaw runtime globally
+RUN npm install -g openclaw
+
 # Create user with sudo
 RUN useradd -m -s /bin/bash nodeuser && \
     usermod -aG sudo nodeuser && \
@@ -22,4 +25,9 @@ RUN useradd -m -s /bin/bash nodeuser && \
 USER nodeuser
 WORKDIR /home/nodeuser
 
-CMD ["tail", "-f", "/dev/null"]
+EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=45s --retries=3 \
+    CMD curl -fsS http://127.0.0.1:3000/ || exit 1
+
+CMD ["openclaw", "gateway", "run", "--allow-unconfigured"]
