@@ -1,12 +1,34 @@
 services:
-  openclaw:
-    build: .
+  hermes:
+    image: nousresearch/hermes-agent:latest
     container_name: openclaw-vps
     restart: unless-stopped
     volumes:
-      - nodeuser-data:/home/nodeuser
-    ports:
-      - "3000:3000"
+      - nodeuser-data:/opt/data
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        mkdir -p /opt/data/sessions /opt/data/memories /opt/data/skills \
+                 /opt/data/cron /opt/data/hooks /opt/data/logs /opt/data/skins
+        if [ -f /opt/data/config.yaml ] \
+           && grep -qE '^[[:space:]]*provider:[[:space:]]*[^[:space:]]' /opt/data/config.yaml 2>/dev/null; then
+          echo "[hermes-wrapper] config.yaml has a provider — starting gateway"
+          exec hermes gateway run
+        else
+          echo "[hermes-wrapper] No provider configured in /opt/data/config.yaml"
+          echo "[hermes-wrapper] Bootstrap:"
+          echo "[hermes-wrapper]   docker exec -it openclaw-vps hermes claw migrate   # migrate OpenClaw data"
+          echo "[hermes-wrapper]   docker exec -it openclaw-vps hermes setup          # then configure provider/channel"
+          echo "[hermes-wrapper] Redeploy this service to pick up the new config."
+          exec tail -f /dev/null
+        fi
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: "2.0"
 
 volumes:
   nodeuser-data:
